@@ -10,6 +10,7 @@ import sys
 import re
 import json
 import qrcode
+import qrcode.image.svg
 import StringIO
 import math
 import bitcoin # pybitcointools
@@ -125,13 +126,16 @@ def get_qrcode(address):
     qr.add_data('bitcoin:'+str(address))
     qr.make(fit=True)
 
-    img = qr.make_image()
+    # SVG output keeps QR generation dependency-free. The default image
+    # factory requires Pillow, which this Python 2 application cannot upgrade
+    # to a version containing current security fixes.
+    img = qr.make_image(image_factory=qrcode.image.svg.SvgPathImage)
 
     img_io = StringIO.StringIO()
-    img.save(img_io, 'PNG')
+    img.save(img_io)
     img_io.seek(0)
 
-    return send_file(img_io, mimetype='image/png')
+    return send_file(img_io, mimetype='image/svg+xml')
 
 def check_and_send(address):
     '''
